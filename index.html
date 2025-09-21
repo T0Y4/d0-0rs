@@ -46,34 +46,22 @@
     .overlay { position:fixed; inset:0; background:#fff; z-index:199; opacity:0; pointer-events:none; }
     .overlay.show { opacity:1; pointer-events:auto; }
     .image-container { position:relative; width:1000px; height:1000px; will-change: transform; }
-    .game-sprite { 
+    .game-image { 
       position:absolute; 
       top:0; 
       left:0; 
       width:100%; 
       height:100%; 
-      background-image: url('./images/2/2_static_image.png');
-      background-size: 100% 100%;
-      background-repeat: no-repeat;
-      background-position: 0 0;
-      will-change: background-image, transform;
+      object-fit: contain;
+      will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
     }
     .side { position:absolute; top:0; width:50%; height:100%; will-change: transform; }
     .left-side { left:0; } .right-side { right:0; }
-    
-    /* Frame classes for sprite animation */
-    .frame-static { background-image: url('./images/2/2_static_image.png'); }
-    .frame-left-1 { background-image: url('./images/2/2_left_1.png'); }
-    .frame-left-2 { background-image: url('./images/2/2_left_2.png'); }
-    .frame-left-3 { background-image: url('./images/2/2_left_3.png'); }
-    .frame-left-negative { background-image: url('./images/2/2_negative_left_4_alt.png'); }
-    .frame-right-1 { background-image: url('./images/2/2_right_1.png'); }
-    .frame-right-2 { background-image: url('./images/2/2_right_2.png'); }
-    .frame-right-3 { background-image: url('./images/2/2_right_3.png'); }
-    .frame-right-negative { background-image: url('./images/2/2_negative_right_4_alt.png'); }
     @media (max-width:768px) {
       .image-container { width:500px; height:500px; }
       .scoreboard, .high-score { font-size:30px; }
@@ -116,7 +104,7 @@
   <div class="overlay" id="overlay" onclick="resetPage()"></div>
 
   <div class="image-container" id="image-container">
-    <div class="game-sprite" id="game-sprite"></div>
+    <img src="./images/2/2_static_image.png" alt="Static Image" class="game-image" id="game-image">
     <div class="side left-side" onclick="handleClick('left')"></div>
     <div class="side right-side" onclick="handleClick('right')"></div>
   </div>
@@ -158,12 +146,12 @@
 
     function setT(fn, ms){ const id = setTimeout(fn, ms); activeTimers.push(id); return id; }
     function clearTimers(){ activeTimers.forEach(clearTimeout); activeTimers=[]; if(animRaf){ cancelAnimationFrame(animRaf); animRaf=null; } }
-    function cancelAnimations(){ sceneToken++; clearTimers(); const sprite = document.getElementById('game-sprite'); sprite.className = 'game-sprite frame-static'; isAnimating=false; }
+    function cancelAnimations(){ sceneToken++; clearTimers(); const gameImage = document.getElementById('game-image'); gameImage.src = './images/2/2_static_image.png'; isAnimating=false; }
 
     function handleClick(side){
       if(!gameStarted || isAnimating) return;
-      const sprite = document.getElementById('game-sprite');
-      if(!sprite.classList.contains('frame-static')) return;
+      const gameImage = document.getElementById('game-image');
+      if(gameImage.src.indexOf('2_static_image.png') === -1) return;
       isAnimating = true;
       
       // Prevent multiple rapid touches
@@ -174,7 +162,7 @@
       const outcome = Math.floor(Math.random()*2);
       if(side==='left'){
         if(outcome===1){
-          showFrames(['frame-left-1','frame-left-2','frame-left-3'],300,()=>{ 
+          showFrames(['./images/2/2_left_1.png','./images/2/2_left_2.png','./images/2/2_left_3.png'],300,()=>{ 
             resetToStatic(); 
             updateScore(score+1); 
             isAnimating=false;
@@ -184,7 +172,7 @@
             });
           });
         }else{
-          showFrames(['frame-left-1','frame-left-2','frame-left-negative'],[300,300,600],()=>{ 
+          showFrames(['./images/2/2_left_1.png','./images/2/2_left_2.png','./images/2/2_negative_left_4_alt.png'],[300,300,600],()=>{ 
             showTryAgainText(); 
             isAnimating=false;
             // Re-enable touch events
@@ -195,7 +183,7 @@
         }
       }else{
         if(outcome===1){
-          showFrames(['frame-right-1','frame-right-2','frame-right-3'],300,()=>{ 
+          showFrames(['./images/2/2_right_1.png','./images/2/2_right_2.png','./images/2/2_right_3.png'],300,()=>{ 
             resetToStatic(); 
             updateScore(score+1); 
             isAnimating=false;
@@ -205,7 +193,7 @@
             });
           });
         }else{
-          showFrames(['frame-right-1','frame-right-2','frame-right-negative'],[300,300,600],()=>{ 
+          showFrames(['./images/2/2_right_1.png','./images/2/2_right_2.png','./images/2/2_negative_right_4_alt.png'],[300,300,600],()=>{ 
             showTryAgainText(); 
             isAnimating=false;
             // Re-enable touch events
@@ -217,20 +205,20 @@
       }
     }
 
-    function showFrames(frameClasses, intervals, cb){
+    function showFrames(imageSrcs, intervals, cb){
       const myToken = ++sceneToken;
-      const sprite = document.getElementById('game-sprite');
+      const gameImage = document.getElementById('game-image');
       let i=0;
       
       function step(){
         if(myToken!==sceneToken) return;
-        if(i<frameClasses.length){
-          const frameClass = frameClasses[i];
+        if(i<imageSrcs.length){
+          const imageSrc = imageSrcs[i];
           
-          // Remove all frame classes and add current one
-          sprite.className = 'game-sprite ' + frameClass;
+          // Change image source
+          gameImage.src = imageSrc;
           
-          if(i<frameClasses.length-1){
+          if(i<imageSrcs.length-1){
             setT(()=>{ 
               if(myToken!==sceneToken) return; 
               i++; 
@@ -249,8 +237,8 @@
     }
 
     function resetToStatic(){
-      const sprite = document.getElementById('game-sprite');
-      sprite.className = 'game-sprite frame-static';
+      const gameImage = document.getElementById('game-image');
+      gameImage.src = './images/2/2_static_image.png';
       scoreEl.style.display='block';
       document.getElementById('high-score').style.display='block';
     }
@@ -371,6 +359,14 @@
       ];
       
       preloadImagesWithProgress(imagesToPreload, ()=>{}, ()=>{
+        // Preload images into browser cache by creating hidden img elements
+        const gameImage = document.getElementById('game-image');
+        imagesToPreload.forEach(src => {
+          if(src !== './images/2/logo.png') {
+            const img = new Image();
+            img.src = src;
+          }
+        });
         
         logoScreen.style.cursor = 'pointer';
         logoScreen.onclick = showModeMenu;
