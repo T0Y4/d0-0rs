@@ -9,15 +9,7 @@
   <title>DOORS</title>
   <link rel="icon" type="image/png" href="images/2/logo.png">
   <link rel="preload" href="./fonts/Tiny5-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="./images/2/2_static_image.png" as="image">
-  <link rel="preload" href="./images/2/2_left_1.png" as="image">
-  <link rel="preload" href="./images/2/2_left_2.png" as="image">
-  <link rel="preload" href="./images/2/2_left_3.png" as="image">
-  <link rel="preload" href="./images/2/2_negative_left_4_alt.png" as="image">
-  <link rel="preload" href="./images/2/2_right_1.png" as="image">
-  <link rel="preload" href="./images/2/2_right_2.png" as="image">
-  <link rel="preload" href="./images/2/2_right_3.png" as="image">
-  <link rel="preload" href="./images/2/2_negative_right_4_alt.png" as="image">
+  <link rel="preload" href="./images/2/sprite.png" as="image">
   <style>
     @font-face {
       font-family: 'Tiny5';
@@ -46,23 +38,22 @@
     .overlay { position:fixed; inset:0; background:#fff; z-index:199; opacity:0; pointer-events:none; }
     .overlay.show { opacity:1; pointer-events:auto; }
     .image-container { position:relative; width:1000px; height:1000px; will-change: transform; }
-    .game-frame { 
+    .sprite-frame { 
       position:absolute; 
       top:0; 
       left:0; 
       width:100%; 
       height:100%; 
-      object-fit: contain;
+      background-image: url('./images/2/sprite.png');
+      background-size: 100% 900%;
+      background-position: 0 0px;
+      background-repeat: no-repeat;
       will-change: transform;
       transform: translateZ(0);
       -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
-      display: none;
-    }
-    .game-frame.active {
-      display: block;
     }
     .side { position:absolute; top:0; width:50%; height:100%; will-change: transform; }
     .left-side { left:0; } .right-side { right:0; }
@@ -108,15 +99,7 @@
   <div class="overlay" id="overlay" onclick="resetPage()"></div>
 
   <div class="image-container" id="image-container">
-    <img src="./images/2/2_static_image.png" alt="Static Image" class="game-frame active" id="frame-static">
-    <img src="./images/2/2_left_1.png" alt="Left 1" class="game-frame" id="frame-left-1">
-    <img src="./images/2/2_left_2.png" alt="Left 2" class="game-frame" id="frame-left-2">
-    <img src="./images/2/2_left_3.png" alt="Left 3" class="game-frame" id="frame-left-3">
-    <img src="./images/2/2_negative_left_4_alt.png" alt="Left Negative" class="game-frame" id="frame-left-negative">
-    <img src="./images/2/2_right_1.png" alt="Right 1" class="game-frame" id="frame-right-1">
-    <img src="./images/2/2_right_2.png" alt="Right 2" class="game-frame" id="frame-right-2">
-    <img src="./images/2/2_right_3.png" alt="Right 3" class="game-frame" id="frame-right-3">
-    <img src="./images/2/2_negative_right_4_alt.png" alt="Right Negative" class="game-frame" id="frame-right-negative">
+    <div class="sprite-frame" id="sprite-frame"></div>
     <div class="side left-side" onclick="handleClick('left')"></div>
     <div class="side right-side" onclick="handleClick('right')"></div>
   </div>
@@ -128,16 +111,26 @@
     const scoreEl = document.getElementById('score');
 
     function showFrame(frameId){
-      // Hide all frames
-      const frames = document.querySelectorAll('.game-frame');
-      for(let x = 0; x < frames.length; x++){
-        frames[x].style.display = 'none';
-      }
-      // Show target frame
-      const targetFrame = document.getElementById(frameId);
-      if(targetFrame) {
-        targetFrame.style.display = 'block';
-      }
+      const spriteFrame = document.getElementById('sprite-frame');
+      if(!spriteFrame) return;
+      
+      // Frame positions in sprite (0-8)
+      const framePositions = {
+        'frame-static': 0,
+        'frame-left-1': 1,
+        'frame-left-2': 2,
+        'frame-left-3': 3,
+        'frame-left-negative': 4,
+        'frame-right-1': 5,
+        'frame-right-2': 6,
+        'frame-right-3': 7,
+        'frame-right-negative': 8
+      };
+      
+      const position = framePositions[frameId] || 0;
+      const backgroundPosition = `0 ${position * -1000}px`; // Каждый кадр 1000px
+      
+      spriteFrame.style.backgroundPosition = backgroundPosition;
     }
 
     function loadHighScore(){
@@ -355,23 +348,9 @@
     }
 
     function preloadImages(){
-      const imageUrls = [
-        './images/2/2_static_image.png',
-        './images/2/2_left_1.png',
-        './images/2/2_left_2.png',
-        './images/2/2_left_3.png',
-        './images/2/2_negative_left_4_alt.png',
-        './images/2/2_right_1.png',
-        './images/2/2_right_2.png',
-        './images/2/2_right_3.png',
-        './images/2/2_negative_right_4_alt.png'
-      ];
-      
-      // Simple preload
-      imageUrls.forEach(url => {
-        const img = new Image();
-        img.src = url;
-      });
+      // Preload only the sprite
+      const img = new Image();
+      img.src = './images/2/sprite.png';
     }
 
     function initPreloadAndActivateLogo(){
