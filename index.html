@@ -46,7 +46,20 @@
     .overlay { position:fixed; inset:0; background:#fff; z-index:199; opacity:0; pointer-events:none; }
     .overlay.show { opacity:1; pointer-events:auto; }
     .image-container { position:relative; width:1000px; height:1000px; will-change: transform; }
-    .game-image { 
+    .game-canvas { 
+      position:absolute; 
+      top:0; 
+      left:0; 
+      width:100%; 
+      height:100%; 
+      will-change: transform;
+      transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+    .game-image-fallback { 
       position:absolute; 
       top:0; 
       left:0; 
@@ -104,7 +117,8 @@
   <div class="overlay" id="overlay" onclick="resetPage()"></div>
 
   <div class="image-container" id="image-container">
-    <img src="./images/2/2_static_image.png" alt="Static Image" class="game-image" id="game-image">
+    <canvas id="game-canvas" class="game-canvas"></canvas>
+    <img src="./images/2/2_static_image.png" alt="Static Image" class="game-image-fallback" id="game-image-fallback" style="display:none;">
     <div class="side left-side" onclick="handleClick('left')"></div>
     <div class="side right-side" onclick="handleClick('right')"></div>
   </div>
@@ -112,9 +126,77 @@
   <script>
     let score = 0, highScore = 0, isAnimating = false, gameStarted = false;
     let activeTimers = [], animRaf = null, sceneToken = 0;
+    let canvas, ctx, images = {}, useCanvas = false;
 
     const hsNumberEl = document.querySelector('.hs-number');
     const scoreEl = document.getElementById('score');
+
+    function initCanvas(){
+      canvas = document.getElementById('game-canvas');
+      if(!canvas) {
+        console.error('Canvas element not found');
+        return false;
+      }
+      
+      ctx = canvas.getContext('2d');
+      if(!ctx) {
+        console.error('Canvas context not available');
+        return false;
+      }
+      
+      // Set canvas size to match container
+      const container = document.getElementById('image-container');
+      if(!container) {
+        console.error('Image container not found');
+        return false;
+      }
+      
+      const rect = container.getBoundingClientRect();
+      if(rect.width === 0 || rect.height === 0) {
+        console.error('Container has zero size');
+        return false;
+      }
+      
+      // Set high DPI for crisp rendering
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      
+      console.log('Canvas initialized:', rect.width, 'x', rect.height);
+      return true;
+    }
+
+    function loadImage(src, name){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          images[name] = img;
+          resolve(img);
+        };
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    function drawImage(imageName){
+      if(!images[imageName]) {
+        console.error('Image not found:', imageName);
+        return;
+      }
+      if(!ctx) {
+        console.error('Canvas context not available');
+        return;
+      }
+      
+      const container = document.getElementById('image-container');
+      const rect = container.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      ctx.drawImage(images[imageName], 0, 0, rect.width, rect.height);
+      console.log('Drew image:', imageName, 'at size:', rect.width, 'x', rect.height);
+    }
 
     function loadHighScore(){
       const s = localStorage.getItem('doors_high_score');
@@ -146,12 +228,27 @@
 
     function setT(fn, ms){ const id = setTimeout(fn, ms); activeTimers.push(id); return id; }
     function clearTimers(){ activeTimers.forEach(clearTimeout); activeTimers=[]; if(animRaf){ cancelAnimationFrame(animRaf); animRaf=null; } }
-    function cancelAnimations(){ sceneToken++; clearTimers(); const gameImage = document.getElementById('game-image'); gameImage.src = './images/2/2_static_image.png'; isAnimating=false; }
+    function cancelAnimations(){ 
+      sceneToken++; 
+      clearTimers(); 
+      if(useCanvas) {
+        drawImage('static');
+      } else {
+        const fallback = document.getElementById('game-image-fallback');
+        if(fallback) {
+          fallback.src = './images/2/2_static_image.png';
+        }
+      }
+      isAnimating=false; 
+    }
 
     function handleClick(side){
       if(!gameStarted || isAnimating) return;
-      const gameImage = document.getElementById('game-image');
-      if(gameImage.src.indexOf('2_static_image.png') === -1) return;
+      if(useCanvas && !images['static']) return;
+      if(!useCanvas) {
+        const fallback = document.getElementById('game-image-fallback');
+        if(!fallback || fallback.src.indexOf('2_static_image.png') === -1) return;
+      }
       isAnimating = true;
       
       // Prevent multiple rapid touches
@@ -162,7 +259,7 @@
       const outcome = Math.floor(Math.random()*2);
       if(side==='left'){
         if(outcome===1){
-          showFrames(['./images/2/2_left_1.png','./images/2/2_left_2.png','./images/2/2_left_3.png'],300,()=>{ 
+          showFrames(['left1','left2','left3'],300,()=>{ 
             resetToStatic(); 
             updateScore(score+1); 
             isAnimating=false;
@@ -172,7 +269,7 @@
             });
           });
         }else{
-          showFrames(['./images/2/2_left_1.png','./images/2/2_left_2.png','./images/2/2_negative_left_4_alt.png'],[300,300,600],()=>{ 
+          showFrames(['left1','left2','leftNegative'],[300,300,600],()=>{ 
             showTryAgainText(); 
             isAnimating=false;
             // Re-enable touch events
@@ -183,7 +280,7 @@
         }
       }else{
         if(outcome===1){
-          showFrames(['./images/2/2_right_1.png','./images/2/2_right_2.png','./images/2/2_right_3.png'],300,()=>{ 
+          showFrames(['right1','right2','right3'],300,()=>{ 
             resetToStatic(); 
             updateScore(score+1); 
             isAnimating=false;
@@ -193,7 +290,7 @@
             });
           });
         }else{
-          showFrames(['./images/2/2_right_1.png','./images/2/2_right_2.png','./images/2/2_negative_right_4_alt.png'],[300,300,600],()=>{ 
+          showFrames(['right1','right2','rightNegative'],[300,300,600],()=>{ 
             showTryAgainText(); 
             isAnimating=false;
             // Re-enable touch events
@@ -205,20 +302,39 @@
       }
     }
 
-    function showFrames(imageSrcs, intervals, cb){
+    function showFrames(imageNames, intervals, cb){
       const myToken = ++sceneToken;
-      const gameImage = document.getElementById('game-image');
       let i=0;
       
       function step(){
         if(myToken!==sceneToken) return;
-        if(i<imageSrcs.length){
-          const imageSrc = imageSrcs[i];
+        if(i<imageNames.length){
+          const imageName = imageNames[i];
           
-          // Change image source
-          gameImage.src = imageSrc;
+          if(useCanvas) {
+            // Draw image on canvas
+            drawImage(imageName);
+          } else {
+            // Change fallback image source
+            const fallback = document.getElementById('game-image-fallback');
+            if(fallback) {
+              const imageMap = {
+                'left1': './images/2/2_left_1.png',
+                'left2': './images/2/2_left_2.png',
+                'left3': './images/2/2_left_3.png',
+                'leftNegative': './images/2/2_negative_left_4_alt.png',
+                'right1': './images/2/2_right_1.png',
+                'right2': './images/2/2_right_2.png',
+                'right3': './images/2/2_right_3.png',
+                'rightNegative': './images/2/2_negative_right_4_alt.png'
+              };
+              if(imageMap[imageName]) {
+                fallback.src = imageMap[imageName];
+              }
+            }
+          }
           
-          if(i<imageSrcs.length-1){
+          if(i<imageNames.length-1){
             setT(()=>{ 
               if(myToken!==sceneToken) return; 
               i++; 
@@ -237,8 +353,14 @@
     }
 
     function resetToStatic(){
-      const gameImage = document.getElementById('game-image');
-      gameImage.src = './images/2/2_static_image.png';
+      if(useCanvas) {
+        drawImage('static');
+      } else {
+        const fallback = document.getElementById('game-image-fallback');
+        if(fallback) {
+          fallback.src = './images/2/2_static_image.png';
+        }
+      }
       scoreEl.style.display='block';
       document.getElementById('high-score').style.display='block';
     }
@@ -343,36 +465,58 @@
       });
     }
 
-    function initPreloadAndActivateLogo(){
+    async function initPreloadAndActivateLogo(){
       const logoScreen = document.getElementById('logo-screen');
-      const imagesToPreload = [
-        './images/2/2_static_image.png',
-        './images/2/2_left_1.png',
-        './images/2/2_left_2.png',
-        './images/2/2_left_3.png',
-        './images/2/2_negative_left_4_alt.png',
-        './images/2/2_right_1.png',
-        './images/2/2_right_2.png',
-        './images/2/2_right_3.png',
-        './images/2/2_negative_right_4_alt.png',
-        './images/2/logo.png'
-      ];
       
-      preloadImagesWithProgress(imagesToPreload, ()=>{}, ()=>{
-        // Preload images into browser cache by creating hidden img elements
-        const gameImage = document.getElementById('game-image');
-        imagesToPreload.forEach(src => {
-          if(src !== './images/2/logo.png') {
-            const img = new Image();
-            img.src = src;
-          }
-        });
+      // Wait for DOM to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Try to initialize canvas first
+      if(initCanvas()) {
+        useCanvas = true;
+        console.log('Using Canvas mode');
         
-        logoScreen.style.cursor = 'pointer';
-        logoScreen.onclick = showModeMenu;
-        logoScreen.setAttribute('tabindex','0');
-        logoScreen.onkeydown = (e)=>{ if(e.key==='Enter' || e.key===' ') { showModeMenu(); } };
-      });
+        // Load all game images
+        try {
+          console.log('Loading images...');
+          await Promise.all([
+            loadImage('./images/2/2_static_image.png', 'static'),
+            loadImage('./images/2/2_left_1.png', 'left1'),
+            loadImage('./images/2/2_left_2.png', 'left2'),
+            loadImage('./images/2/2_left_3.png', 'left3'),
+            loadImage('./images/2/2_negative_left_4_alt.png', 'leftNegative'),
+            loadImage('./images/2/2_right_1.png', 'right1'),
+            loadImage('./images/2/2_right_2.png', 'right2'),
+            loadImage('./images/2/2_right_3.png', 'right3'),
+            loadImage('./images/2/2_negative_right_4_alt.png', 'rightNegative'),
+            loadImage('./images/2/logo.png', 'logo')
+          ]);
+          
+          console.log('All images loaded successfully');
+          
+          // Draw initial static image
+          drawImage('static');
+        } catch (error) {
+          console.error('Failed to load images:', error);
+          useCanvas = false;
+        }
+      } else {
+        useCanvas = false;
+        console.log('Canvas failed, using fallback mode');
+        
+        // Show fallback image
+        const fallback = document.getElementById('game-image-fallback');
+        const canvasEl = document.getElementById('game-canvas');
+        if(fallback && canvasEl) {
+          canvasEl.style.display = 'none';
+          fallback.style.display = 'block';
+        }
+      }
+      
+      logoScreen.style.cursor = 'pointer';
+      logoScreen.onclick = showModeMenu;
+      logoScreen.setAttribute('tabindex','0');
+      logoScreen.onkeydown = (e)=>{ if(e.key==='Enter' || e.key===' ') { showModeMenu(); } };
     }
 
     initPreloadAndActivateLogo();
