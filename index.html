@@ -59,10 +59,10 @@
       backface-visibility: hidden;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
-      visibility: hidden;
+      display: none;
     }
     .game-frame.active {
-      visibility: visible;
+      display: block;
     }
     .side { position:absolute; top:0; width:50%; height:100%; will-change: transform; }
     .left-side { left:0; } .right-side { right:0; }
@@ -131,12 +131,12 @@
       // Hide all frames
       const frames = document.querySelectorAll('.game-frame');
       for(let x = 0; x < frames.length; x++){
-        frames[x].classList.remove('active');
+        frames[x].style.display = 'none';
       }
       // Show target frame
       const targetFrame = document.getElementById(frameId);
       if(targetFrame) {
-        targetFrame.classList.add('active');
+        targetFrame.style.display = 'block';
       }
     }
 
@@ -229,28 +229,23 @@
     }
 
     function showFrames(frameIds, intervals, cb){
-      let i=0;
+      // Simple approach - show frames with minimal JavaScript
+      let currentIndex = 0;
       
-      function step(){
-        if(i<frameIds.length){
-          const frameId = frameIds[i];
+      function showNextFrame() {
+        if (currentIndex < frameIds.length) {
+          showFrame(frameIds[currentIndex]);
+          currentIndex++;
           
-          // Show frame
-          showFrame(frameId);
-          
-          if(i<frameIds.length-1){
-            setTimeout(()=>{ 
-              i++; 
-              step(); 
-            }, Array.isArray(intervals)?intervals[i]:intervals);
-          }else{
-            setTimeout(()=>{ 
-              cb(); 
-            }, Array.isArray(intervals)?intervals[i]:intervals);
+          if (currentIndex < frameIds.length) {
+            setTimeout(showNextFrame, Array.isArray(intervals) ? intervals[currentIndex-1] : intervals);
+          } else {
+            setTimeout(cb, Array.isArray(intervals) ? intervals[currentIndex-1] : intervals);
           }
         }
       }
-      step();
+      
+      showNextFrame();
     }
 
     function resetToStatic(){
@@ -372,21 +367,10 @@
         './images/2/2_negative_right_4_alt.png'
       ];
       
-      // Force preload with multiple methods
+      // Simple preload
       imageUrls.forEach(url => {
-        // Method 1: Image object
         const img = new Image();
         img.src = url;
-        
-        // Method 2: Link preload
-        const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'image';
-        link.href = url;
-        document.head.appendChild(link);
-        
-        // Method 3: Fetch to force cache
-        fetch(url).catch(() => {});
       });
     }
 
