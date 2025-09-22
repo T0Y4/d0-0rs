@@ -53,6 +53,9 @@
         
         let currentImageIndex = 0;
         const displayDuration = 300; // 300мс
+        let isPlaying = false;
+        let intervalId = null;
+        let playCount = 0;
         
         function showImage(index) {
             // Скрыть все изображения
@@ -70,10 +73,52 @@
         function nextImage() {
             currentImageIndex = (currentImageIndex + 1) % images.length;
             showImage(currentImageIndex);
+            
+            // Если прошли полный цикл (4 картинки), останавливаем
+            if (currentImageIndex === 0) {
+                playCount++;
+                if (playCount >= 1) {
+                    stopSlideshow();
+                    playCount = 0;
+                }
+            }
         }
         
-        // Запуск автоматической смены
-        setInterval(nextImage, displayDuration);
+        function startSlideshow() {
+            if (!isPlaying) {
+                isPlaying = true;
+                playCount = 0;
+                currentImageIndex = 0; // Начинаем с первой картинки
+                showImage(currentImageIndex);
+                intervalId = setInterval(nextImage, displayDuration);
+            }
+        }
+        
+        function stopSlideshow() {
+            if (isPlaying) {
+                isPlaying = false;
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+        }
+        
+        // Обработчик нажатий по экрану
+        document.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!isPlaying) {
+                startSlideshow();
+            }
+        });
+        
+        // Обработчик кликов мышью (для тестирования на компьютере)
+        document.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!isPlaying) {
+                startSlideshow();
+            }
+        });
         
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
