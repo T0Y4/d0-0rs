@@ -119,16 +119,16 @@
 
   <script>
     let score = 0, highScore = 0, isAnimating = false, gameStarted = false;
-    let activeTimers = [], animRaf = null, sceneToken = 0;
 
     const hsNumberEl = document.querySelector('.hs-number');
     const scoreEl = document.getElementById('score');
 
     function showFrame(frameId){
       // Hide all frames
-      document.querySelectorAll('.game-frame').forEach(frame => {
-        frame.style.display = 'none';
-      });
+      const frames = document.querySelectorAll('.game-frame');
+      for(let x = 0; x < frames.length; x++){
+        frames[x].style.display = 'none';
+      }
       // Show target frame
       const targetFrame = document.getElementById(frameId);
       if(targetFrame) {
@@ -164,11 +164,7 @@
       }
     }
 
-    function setT(fn, ms){ const id = setTimeout(fn, ms); activeTimers.push(id); return id; }
-    function clearTimers(){ activeTimers.forEach(clearTimeout); activeTimers=[]; if(animRaf){ cancelAnimationFrame(animRaf); animRaf=null; } }
     function cancelAnimations(){ 
-      sceneToken++; 
-      clearTimers(); 
       showFrame('frame-static');
       isAnimating=false; 
     }
@@ -229,11 +225,9 @@
     }
 
     function showFrames(frameIds, intervals, cb){
-      const myToken = ++sceneToken;
       let i=0;
       
       function step(){
-        if(myToken!==sceneToken) return;
         if(i<frameIds.length){
           const frameId = frameIds[i];
           
@@ -241,15 +235,12 @@
           showFrame(frameId);
           
           if(i<frameIds.length-1){
-            setT(()=>{ 
-              if(myToken!==sceneToken) return; 
+            setTimeout(()=>{ 
               i++; 
-              animRaf=requestAnimationFrame(step); 
+              step(); 
             }, Array.isArray(intervals)?intervals[i]:intervals);
           }else{
-            setT(()=>{ 
-              if(myToken!==sceneToken) return; 
-              i++; 
+            setTimeout(()=>{ 
               cb(); 
             }, Array.isArray(intervals)?intervals[i]:intervals);
           }
