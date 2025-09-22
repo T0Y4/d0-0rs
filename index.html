@@ -59,6 +59,10 @@
       backface-visibility: hidden;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: crisp-edges;
+      visibility: hidden;
+    }
+    .game-frame.active {
+      visibility: visible;
     }
     .side { position:absolute; top:0; width:50%; height:100%; will-change: transform; }
     .left-side { left:0; } .right-side { right:0; }
@@ -104,15 +108,15 @@
   <div class="overlay" id="overlay" onclick="resetPage()"></div>
 
   <div class="image-container" id="image-container">
-    <img src="./images/2/2_static_image.png" alt="Static Image" class="game-frame" id="frame-static">
-    <img src="./images/2/2_left_1.png" alt="Left 1" class="game-frame" id="frame-left-1" style="display:none;">
-    <img src="./images/2/2_left_2.png" alt="Left 2" class="game-frame" id="frame-left-2" style="display:none;">
-    <img src="./images/2/2_left_3.png" alt="Left 3" class="game-frame" id="frame-left-3" style="display:none;">
-    <img src="./images/2/2_negative_left_4_alt.png" alt="Left Negative" class="game-frame" id="frame-left-negative" style="display:none;">
-    <img src="./images/2/2_right_1.png" alt="Right 1" class="game-frame" id="frame-right-1" style="display:none;">
-    <img src="./images/2/2_right_2.png" alt="Right 2" class="game-frame" id="frame-right-2" style="display:none;">
-    <img src="./images/2/2_right_3.png" alt="Right 3" class="game-frame" id="frame-right-3" style="display:none;">
-    <img src="./images/2/2_negative_right_4_alt.png" alt="Right Negative" class="game-frame" id="frame-right-negative" style="display:none;">
+    <img src="./images/2/2_static_image.png" alt="Static Image" class="game-frame active" id="frame-static">
+    <img src="./images/2/2_left_1.png" alt="Left 1" class="game-frame" id="frame-left-1">
+    <img src="./images/2/2_left_2.png" alt="Left 2" class="game-frame" id="frame-left-2">
+    <img src="./images/2/2_left_3.png" alt="Left 3" class="game-frame" id="frame-left-3">
+    <img src="./images/2/2_negative_left_4_alt.png" alt="Left Negative" class="game-frame" id="frame-left-negative">
+    <img src="./images/2/2_right_1.png" alt="Right 1" class="game-frame" id="frame-right-1">
+    <img src="./images/2/2_right_2.png" alt="Right 2" class="game-frame" id="frame-right-2">
+    <img src="./images/2/2_right_3.png" alt="Right 3" class="game-frame" id="frame-right-3">
+    <img src="./images/2/2_negative_right_4_alt.png" alt="Right Negative" class="game-frame" id="frame-right-negative">
     <div class="side left-side" onclick="handleClick('left')"></div>
     <div class="side right-side" onclick="handleClick('right')"></div>
   </div>
@@ -127,12 +131,12 @@
       // Hide all frames
       const frames = document.querySelectorAll('.game-frame');
       for(let x = 0; x < frames.length; x++){
-        frames[x].style.display = 'none';
+        frames[x].classList.remove('active');
       }
       // Show target frame
       const targetFrame = document.getElementById(frameId);
       if(targetFrame) {
-        targetFrame.style.display = 'block';
+        targetFrame.classList.add('active');
       }
     }
 
@@ -181,7 +185,7 @@
       const outcome = Math.floor(Math.random()*2);
       if(side==='left'){
         if(outcome===1){
-          showFrames(['frame-left-1','frame-left-2','frame-left-3'],300,()=>{ 
+          showFrames(['frame-left-1','frame-left-2','frame-left-3'],200,()=>{ 
             resetToStatic(); 
             updateScore(score+1); 
             isAnimating=false;
@@ -191,7 +195,7 @@
             });
           });
         }else{
-          showFrames(['frame-left-1','frame-left-2','frame-left-negative'],[300,300,600],()=>{ 
+          showFrames(['frame-left-1','frame-left-2','frame-left-negative'],[200,200,400],()=>{ 
             showTryAgainText(); 
             isAnimating=false;
             // Re-enable touch events
@@ -202,7 +206,7 @@
         }
       }else{
         if(outcome===1){
-          showFrames(['frame-right-1','frame-right-2','frame-right-3'],300,()=>{ 
+          showFrames(['frame-right-1','frame-right-2','frame-right-3'],200,()=>{ 
             resetToStatic(); 
             updateScore(score+1); 
             isAnimating=false;
@@ -212,7 +216,7 @@
             });
           });
         }else{
-          showFrames(['frame-right-1','frame-right-2','frame-right-negative'],[300,300,600],()=>{ 
+          showFrames(['frame-right-1','frame-right-2','frame-right-negative'],[200,200,400],()=>{ 
             showTryAgainText(); 
             isAnimating=false;
             // Re-enable touch events
@@ -368,9 +372,21 @@
         './images/2/2_negative_right_4_alt.png'
       ];
       
+      // Force preload with multiple methods
       imageUrls.forEach(url => {
+        // Method 1: Image object
         const img = new Image();
         img.src = url;
+        
+        // Method 2: Link preload
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = url;
+        document.head.appendChild(link);
+        
+        // Method 3: Fetch to force cache
+        fetch(url).catch(() => {});
       });
     }
 
