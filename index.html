@@ -1,376 +1,84 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"/>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="format-detection" content="telephone=no">
-  <title>DOORS</title>
-  <link rel="icon" type="image/png" href="images/2/logo.png">
-  <link rel="preload" href="./fonts/Tiny5-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="./images/2/sprite.png" as="image">
-  <style>
-    @font-face {
-      font-family: 'Tiny5';
-      src: url('./fonts/Tiny5-Regular.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-      font-display: block;
-    }
-    html, body { margin:0; height:100%; background:#fff; overflow:hidden; -webkit-overflow-scrolling: touch; }
-    body { display:flex; justify-content:center; align-items:center; height:100vh; font-family:'Tiny5', sans-serif; color:#000; -webkit-tap-highlight-color: transparent; }
-    .center-screen { position:fixed; inset:0; display:grid; place-items:center; }
-    .logo { width:min(500px, 90vw); height:auto; image-rendering:pixelated; display:block; cursor:default; }
-    .mode-menu { position:fixed; inset:0; background:#fff; display:none; align-items:center; justify-content:center; }
-    .mode-options { display:flex; flex-direction:column; align-items:center; gap:40px; }
-    .mode-option { font-size:60px; color:#000; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px; }
-    .mode-option.coming-soon { color:#888; cursor:not-allowed; }
-    .coming-soon-text { font-size:20px; color:#aaa; line-height:1; }
-    .menu-button { position:fixed; top:20px; left:20px; font-size:50px; color:#000; cursor:pointer; z-index:200; }
-    .scoreboard-container { position:fixed; top:20px; right:20px; text-align:right; z-index:100; }
-    .scoreboard, .high-score { font-size:50px; }
-    .hs-number { display:inline-block; color:#000; transform:scale(1); }
-    .hs-number.gold { color:#FFD700; }
-    .hs-number.pop { transform:scale(1.35) translateZ(0); }
-    .try-again { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:50px; color:#000; z-index:201; opacity:0; pointer-events:none; cursor:pointer; }
-    .try-again.show { opacity:1; pointer-events:auto; }
-    .overlay { position:fixed; inset:0; background:#fff; z-index:199; opacity:0; pointer-events:none; }
-    .overlay.show { opacity:1; pointer-events:auto; }
-    .image-container { position:relative; width:1000px; height:1000px; will-change: transform; }
-    .sprite-frame { 
-      position:absolute; 
-      top:0; 
-      left:0; 
-      width:100%; 
-      height:100%; 
-      background-image: url('./images/2/sprite.png');
-      background-size: 100% 900%;
-      background-position: 0 0px;
-      background-repeat: no-repeat;
-      will-change: transform;
-      transform: translateZ(0);
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
-    }
-    .side { position:absolute; top:0; width:50%; height:100%; will-change: transform; }
-    .left-side { left:0; } .right-side { right:0; }
-    @media (max-width:768px) {
-      .image-container { width:500px; height:500px; }
-      .scoreboard, .high-score { font-size:30px; }
-      .menu-button { font-size:30px; }
-      .try-again { font-size:30px; }
-      .mode-option { font-size:40px; }
-      .mode-options { gap:25px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пиксельная смена изображений</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            overflow: hidden;
+        }
+        
+        .image-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .image-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            opacity: 0;
+            transition: none;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        .image-slide.active {
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-  <div class="center-screen" id="logo-screen">
-    <img src="./images/2/logo.png" alt="DOORS" class="logo" id="logo">
-  </div>
-
-  <div class="mode-menu" id="mode-menu">
-    <div class="mode-options">
-      <div class="mode-option available" id="mode-hs" onclick="selectMode('hs')">
-        <span>hs mode</span>
-      </div>
-      <div class="mode-option coming-soon" id="mode-bid">
-        <span>bid mode</span>
-        <span class="coming-soon-text">coming soon</span>
-      </div>
-      <div class="mode-option coming-soon" id="mode-pvp">
-        <span>pvp mode</span>
-        <span class="coming-soon-text">coming soon</span>
-      </div>
+    <div class="image-container">
+        <img src="images/2/2_static_image.png" alt="Статичное изображение" class="image-slide active" id="image0">
+        <img src="images/2/2_left_1.png" alt="Левое изображение 1" class="image-slide" id="image1">
+        <img src="images/2/2_left_2.png" alt="Левое изображение 2" class="image-slide" id="image2">
+        <img src="images/2/2_left_3.png" alt="Левое изображение 3" class="image-slide" id="image3">
     </div>
-  </div>
 
-  <div class="menu-button" id="menu-button" onclick="returnToMenu()">menu</div>
-
-  <div class="scoreboard-container">
-    <div class="high-score" id="high-score"><span class="hs-label">hs:</span> <span class="hs-number">0</span></div>
-    <div class="scoreboard" id="score">0</div>
-  </div>
-
-  <div class="try-again" id="try-again" onclick="resetPage()">try again</div>
-  <div class="overlay" id="overlay" onclick="resetPage()"></div>
-
-  <div class="image-container" id="image-container">
-    <div class="sprite-frame" id="sprite-frame"></div>
-    <div class="side left-side" onclick="handleClick('left')"></div>
-    <div class="side right-side" onclick="handleClick('right')"></div>
-  </div>
-
-  <script>
-    let score = 0, highScore = 0, isAnimating = false, gameStarted = false;
-
-    const hsNumberEl = document.querySelector('.hs-number');
-    const scoreEl = document.getElementById('score');
-
-    function showFrame(frameId){
-      const spriteFrame = document.getElementById('sprite-frame');
-      if(!spriteFrame) return;
-      
-      // Frame positions in sprite (0-8)
-      const framePositions = {
-        'frame-static': 0,
-        'frame-left-1': 1,
-        'frame-left-2': 2,
-        'frame-left-3': 3,
-        'frame-left-negative': 4,
-        'frame-right-1': 5,
-        'frame-right-2': 6,
-        'frame-right-3': 7,
-        'frame-right-negative': 8
-      };
-      
-      const position = framePositions[frameId] || 0;
-      const backgroundPosition = `0 ${position * -1000}px`; // Каждый кадр 1000px
-      
-      spriteFrame.style.backgroundPosition = backgroundPosition;
-    }
-
-    function loadHighScore(){
-      const s = localStorage.getItem('doors_high_score');
-      if(s!==null){
-        highScore = parseInt(s);
-        hsNumberEl.textContent = highScore;
-      }
-    }
-    function saveHighScore(){ localStorage.setItem('doors_high_score', highScore.toString()); }
-
-    function celebrateHighScore(){
-      hsNumberEl.classList.remove('gold','pop');
-      void hsNumberEl.offsetWidth;
-      hsNumberEl.classList.add('gold','pop');
-      setTimeout(()=>{ hsNumberEl.classList.remove('gold','pop'); }, 220);
-    }
-
-    function updateScore(v){
-      const prev = score;
-      score = v;
-      scoreEl.textContent = score;
-      if(score > highScore){
-        highScore = score;
-        hsNumberEl.textContent = highScore;
-        saveHighScore();
-        celebrateHighScore();
-      }
-    }
-
-    function cancelAnimations(){ 
-      showFrame('frame-static');
-      isAnimating=false; 
-    }
-
-    function handleClick(side){
-      if(!gameStarted || isAnimating) return;
-      isAnimating = true;
-      
-      // Prevent multiple rapid touches
-      document.querySelectorAll('.side').forEach(side => {
-        side.style.pointerEvents = 'none';
-      });
-      scoreEl.style.display = 'block';
-      const outcome = Math.floor(Math.random()*2);
-      if(side==='left'){
-        if(outcome===1){
-          showFrames(['frame-left-1','frame-left-2','frame-left-3'],200,()=>{ 
-            resetToStatic(); 
-            updateScore(score+1); 
-            isAnimating=false;
-            // Re-enable touch events
-            document.querySelectorAll('.side').forEach(side => {
-              side.style.pointerEvents = 'auto';
-            });
-          });
-        }else{
-          showFrames(['frame-left-1','frame-left-2','frame-left-negative'],[200,200,400],()=>{ 
-            showTryAgainText(); 
-            isAnimating=false;
-            // Re-enable touch events
-            document.querySelectorAll('.side').forEach(side => {
-              side.style.pointerEvents = 'auto';
-            });
-          });
-        }
-      }else{
-        if(outcome===1){
-          showFrames(['frame-right-1','frame-right-2','frame-right-3'],200,()=>{ 
-            resetToStatic(); 
-            updateScore(score+1); 
-            isAnimating=false;
-            // Re-enable touch events
-            document.querySelectorAll('.side').forEach(side => {
-              side.style.pointerEvents = 'auto';
-            });
-          });
-        }else{
-          showFrames(['frame-right-1','frame-right-2','frame-right-negative'],[200,200,400],()=>{ 
-            showTryAgainText(); 
-            isAnimating=false;
-            // Re-enable touch events
-            document.querySelectorAll('.side').forEach(side => {
-              side.style.pointerEvents = 'auto';
-            });
-          });
-        }
-      }
-    }
-
-    function showFrames(frameIds, intervals, cb){
-      // Simple approach - show frames with minimal JavaScript
-      let currentIndex = 0;
-      
-      function showNextFrame() {
-        if (currentIndex < frameIds.length) {
-          showFrame(frameIds[currentIndex]);
-          currentIndex++;
-          
-          if (currentIndex < frameIds.length) {
-            setTimeout(showNextFrame, Array.isArray(intervals) ? intervals[currentIndex-1] : intervals);
-          } else {
-            setTimeout(cb, Array.isArray(intervals) ? intervals[currentIndex-1] : intervals);
-          }
-        }
-      }
-      
-      showNextFrame();
-    }
-
-    function resetToStatic(){
-      showFrame('frame-static');
-      scoreEl.style.display='block';
-      document.getElementById('high-score').style.display='block';
-    }
-
-    function showTryAgainText(){
-      if(!gameStarted) return;
-      document.getElementById('try-again').classList.add('show');
-      document.getElementById('overlay').classList.add('show');
-    }
-
-    function resetPage(){
-      document.getElementById('try-again').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-      updateScore(0);
-      resetToStatic();
-      // Re-enable touch events
-      document.querySelectorAll('.side').forEach(side => {
-        side.style.pointerEvents = 'auto';
-      });
-    }
-
-    function initLogoScreen(){
-      const logoScreen = document.getElementById('logo-screen');
-      const modeMenu = document.getElementById('mode-menu');
-      const gameContainer = document.getElementById('image-container');
-      const scoreboard = document.querySelector('.scoreboard-container');
-      const menuButton = document.getElementById('menu-button');
-      gameContainer.style.display='none';
-      scoreboard.style.display='none';
-      menuButton.style.display='none';
-      modeMenu.style.display='none';
-      logoScreen.style.display='grid';
-    }
-
-    function showModeMenu(){
-      document.getElementById('logo-screen').style.display='none';
-      document.getElementById('mode-menu').style.display='flex';
-    }
-
-    function selectMode(mode){ if(mode==='hs') startGame(); }
-
-    function startGame(){
-      const modeMenu = document.getElementById('mode-menu');
-      const gameContainer = document.getElementById('image-container');
-      const scoreboard = document.querySelector('.scoreboard-container');
-      const menuButton = document.getElementById('menu-button');
-      cancelAnimations();
-      gameStarted=false; isAnimating=false;
-      updateScore(0); resetToStatic();
-      document.getElementById('try-again').classList.remove('show');
-      document.getElementById('overlay').classList.remove('show');
-      modeMenu.style.display='none';
-      gameContainer.style.display='block';
-      scoreboard.style.display='block';
-      menuButton.style.display='block';
-      gameStarted=true;
-    }
-
-    function returnToMenu(){
-      const gameContainer = document.getElementById('image-container');
-      const scoreboard = document.querySelector('.scoreboard-container');
-      const menuButton = document.getElementById('menu-button');
-      const modeMenu = document.getElementById('mode-menu');
-      const tryAgain = document.getElementById('try-again');
-      const overlay = document.getElementById('overlay');
-      cancelAnimations();
-      gameStarted=false; updateScore(0);
-      gameContainer.style.display='none';
-      scoreboard.style.display='none';
-      menuButton.style.display='none';
-      tryAgain.classList.remove('show');
-      overlay.classList.remove('show');
-      modeMenu.style.display='flex';
-    }
-
-    function preloadImagesWithProgress(srcs, onProgress, onDone){
-      let loaded=0; const total=srcs.length;
-      if(total===0){ onProgress(100); onDone(); return; }
-      
-      // Preload images with better iOS support
-      srcs.forEach(src=>{
-        const img=new Image();
-        img.crossOrigin = 'anonymous'; // Better caching
-        img.onload=()=>{ 
-          loaded++; 
-          onProgress(Math.round(loaded/total*100)); 
-          if(loaded>=total) onDone(); 
-        };
-        img.onerror=()=>{ 
-          loaded++; 
-          onProgress(Math.round(loaded/total*100)); 
-          if(loaded>=total) onDone(); 
-        };
-        img.src=src;
+    <script>
+        const images = [
+            'images/2/2_static_image.png',
+            'images/2/2_left_1.png', 
+            'images/2/2_left_2.png',
+            'images/2/2_left_3.png'
+        ];
         
-        // Force decode for iOS
-        if(img.decode) {
-          img.decode().catch(() => {
-            // Ignore decode errors
-          });
+        let currentImageIndex = 0;
+        const displayDuration = 300; // 300мс
+        
+        function showImage(index) {
+            // Скрыть все изображения
+            document.querySelectorAll('.image-slide').forEach(img => {
+                img.classList.remove('active');
+            });
+            
+            // Показать текущее изображение
+            const currentImg = document.getElementById(`image${index}`);
+            currentImg.classList.add('active');
+            
+            currentImageIndex = index;
         }
-      });
-    }
-
-    function preloadImages(){
-      // Preload only the sprite
-      const img = new Image();
-      img.src = './images/2/sprite.png';
-    }
-
-    function initPreloadAndActivateLogo(){
-      const logoScreen = document.getElementById('logo-screen');
-      
-      // Preload all images
-      preloadImages();
-      
-      // Set initial frame
-      showFrame('frame-static');
-      
-      logoScreen.style.cursor = 'pointer';
-      logoScreen.onclick = showModeMenu;
-      logoScreen.setAttribute('tabindex','0');
-      logoScreen.onkeydown = (e)=>{ if(e.key==='Enter' || e.key===' ') { showModeMenu(); } };
-    }
-
-    initPreloadAndActivateLogo();
-    loadHighScore();
-    initLogoScreen();
-  </script>
+        
+        function nextImage() {
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            showImage(currentImageIndex);
+        }
+        
+        // Запуск автоматической смены
+        setInterval(nextImage, displayDuration);
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            showImage(0);
+        });
+    </script>
 </body>
 </html>
